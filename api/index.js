@@ -7,6 +7,20 @@ const crypto = require('crypto').webcrypto;
 const app = express();
 const port = 3000;
 
+app.get('/', (req, res) => {
+    res.send(`
+      <html>
+        <head>
+          <title>EVENT BURST</title>
+        </head>
+        <body>
+          <h1>Welcome to the Event Ticket Generator!</h1>
+          <p>Why did the developer go broke? Because he used up all his cache!</p>
+        </body>
+      </html>
+    `);
+  });
+
 app.use(bodyParser.json());
 
 async function generateAndUploadQRCode(uniqueID) {
