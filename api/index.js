@@ -10,7 +10,7 @@ const app = express();
 const port = 3000;
 
 app.get('/', (req, res) => {
-    res.send(`
+    res.status(200).send(`
       <html>
         <head>
           <title>EVENT BURST</title>
