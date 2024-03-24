@@ -2,9 +2,7 @@ const express = require('express');
 const qr = require('qr-image');
 const bodyParser = require('body-parser');
 const cloudinary = require('../cloudinaryConfig.js'); 
-// const crypto = require('crypto').webcrypto; 
 const crypto = require('crypto');
-
 
 const app = express();
 const port = 3000;
@@ -33,7 +31,7 @@ async function generateAndUploadQRCode(uniqueID) {
   return result.url; 
 }
 
-app.post('/ticket', async (req, res) => {
+app.post('/api/ticket', async (req, res) => {
   try {
     const { PaymentID } = req.body;
 
