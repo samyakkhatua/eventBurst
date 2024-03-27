@@ -120,7 +120,13 @@ async function addTagToContact(contactId, tagId) {
 
 app.post("/api/ticket", async (req, res) => {
   try {
-    const { PaymentID, contactId } = req.body;
+    const {
+      PaymentID,
+      contactId,
+      customerDetails,
+      technicalDetails,
+      orderDetails,
+    } = req.body;
 
     if (!PaymentID) {
       return res.status(400).send("PaymentID is missing");
@@ -140,6 +146,9 @@ app.post("/api/ticket", async (req, res) => {
     const addTagToContactResponse = await addTagToContact(contactId, 801066);
 
     const response = {
+      customerDetails,
+      technicalDetails,
+      orderDetails,
       PaymentID,
       uniqueID: hash,
       qrCodeUrl,
