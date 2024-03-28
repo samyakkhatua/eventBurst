@@ -4,8 +4,7 @@ const bodyParser = require("body-parser");
 const cloudinary = require("../cloudinaryConfig.js");
 const crypto = require("crypto");
 const https = require("https");
-const sharp = require('sharp');
-
+const sharp = require("sharp");
 
 const app = express();
 const port = 3000;
@@ -34,49 +33,63 @@ async function generateAndUploadQRCode(uniqueID) {
   return result.url;
 }
 
-// async function generateAndUploadQRCodeTempalate(uniqueID) {
-//     // Step 1: Generate QR code as SVG to easily scale for your template
-//     const qrSvg = qr.imageSync(uniqueID, { type: 'svg' });
-  
-//     // Step 2: Define your yellow PNG template dimensions
-//     const width = 600; // Example width
-//     const height = 400; // Example height
-//     const yellowTemplate = Buffer.from(`<svg width="${width}" height="${height}">
-//         <rect width="${width}" height="${height}" style="fill:yellow" />
-//       </svg>`);
-  
-//     // Step 3: Composite the QR code onto the yellow template
-//     const qrCodeOnTemplate = await sharp(yellowTemplate)
-//       .composite([{ input: Buffer.from(qrSvg), gravity: 'centre' }])
-//       .png() // Convert final image to PNG
+// async function generateAndUploadQRCodeTempalate(uniqueID, templatePath) {
+
+//     const qrPngBuffer = qr.imageSync(uniqueID, { type: 'png'});
+
+//     const templateUrl = 'https://res.cloudinary.com/dnmvpsveh/image/upload/v1711617229/template_qdwwpv.png';
+//     const templateImage = sharp(templatePath);
+
+//     const left = 1623;
+//     const top = 128;
+
+//     const combinedImageBuffer = await templateImage
+//       .composite([{ input: qrPngBuffer, left: left, top: top }])
+//       .png()
 //       .toBuffer();
-  
-//     // Step 4: Upload the composite image to Cloudinary
-//     const imageBase64 = `data:image/png;base64,${qrCodeOnTemplate.toString('base64')}`;
+
+//     const imageBase64 = `data:image/png;base64,${combinedImageBuffer.toString('base64')}`;
 //     const result = await cloudinary.uploader.upload(imageBase64);
-  
+
 //     return result.url;
-//   }
+// }
 
-async function generateAndUploadQRCodeTempalate(uniqueID, templatePath) {
-   
-    const qrPngBuffer = qr.imageSync(uniqueID, { type: 'png'});
+async function generateAndUploadQRCodeTempalate(uniqueID) {
+  const templateUrl =
+    "https://res.cloudinary.com/dnmvpsveh/image/upload/v1711617229/template_qdwwpv.png";
 
-    const templateImage = sharp(templatePath);
-  
-    const left = 1623;
-    const top = 128;
-  
-    const combinedImageBuffer = await templateImage
-      .composite([{ input: qrPngBuffer, left: left, top: top }])
-      .png() 
-      .toBuffer();
-  
-    const imageBase64 = `data:image/png;base64,${combinedImageBuffer.toString('base64')}`;
-    const result = await cloudinary.uploader.upload(imageBase64);
-  
-    return result.url;
-  }
+  const qrPngBuffer = qr.imageSync(uniqueID, { type: "png" });
+
+  const combinedImageBuffer = await new Promise((resolve, reject) => {
+    https
+      .get(templateUrl, (response) => {
+        const imageProcessingStream = sharp();
+
+        const left = 1623;
+        const top = 128;
+
+        response
+          .pipe(imageProcessingStream)
+          .composite([{ input: qrPngBuffer, left: left, top: top }])
+          .png()
+          .toBuffer((err, buffer, info) => {
+            if (err) reject(err);
+            else resolve(buffer);
+          });
+      })
+      .on("error", (e) => {
+        reject(e);
+      });
+  });
+
+  const imageBase64 = `data:image/png;base64,${combinedImageBuffer.toString(
+    "base64"
+  )}`;
+  const result = await cloudinary.uploader.upload(imageBase64);
+
+  return result.url;
+}
+
 async function addQRlinkToContact(contactId, qrCodeUrl) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
@@ -182,8 +195,8 @@ app.post("/api/ticket", async (req, res) => {
 
     const uniqueString = `${PaymentID}-${Date.now()}-${Math.random()}`;
     const hash = crypto.createHash("sha256").update(uniqueString).digest("hex");
-    // const qrCodeUrl = await generateAndUploadQRCode(hash);
-    const qrCodeUrl = await generateAndUploadQRCodeTempalate(hash, 'api/terms & Condition.png');
+    
+    const qrCodeUrl = await generateAndUploadQRCodeTempalate(hash);
 
     const addQRlinkToContactResponse = await addQRlinkToContact(
       contactId,
